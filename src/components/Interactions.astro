@@ -1,0 +1,79 @@
+---
+import { useT } from '../i18n/translations';
+import type { Locale } from '../i18n/locales';
+import Icon from './Icon.astro';
+const { locale } = Astro.props as { locale: Locale };
+const t = useT(locale);
+---
+<button type="button" id="to-top" class="to-top no-print" aria-label={t.common.backToTop} hidden><Icon name="arrow-right" class="up" /></button>
+<script>
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  // 1) Scroll-reveal for sections (falls back to visible if anything fails)
+  try {
+    const els = Array.from(document.querySelectorAll<HTMLElement>('.section, .cv-section'));
+    if (reduce.matches || !('IntersectionObserver' in window)) els.forEach((e) => e.classList.add('in'));
+    else {
+      const io = new IntersectionObserver((entries) => entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+      els.forEach((e) => io.observe(e));
+    }
+  } catch { document.querySelectorAll('.section, .cv-section').forEach((e) => e.classList.add('in')); }
+
+  // 2) Pointer spotlight on interactive surfaces (CSS reads --px / --py)
+  document.addEventListener('pointermove', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('.card, .rx-tab, .interest-list li, .lang-card, .term');
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--px', `${e.clientX - r.left}px`);
+    el.style.setProperty('--py', `${e.clientY - r.top}px`);
+  }, { passive: true });
+
+  // 3) Hero parallax (chip follows the pointer slightly)
+  const hero = document.querySelector<HTMLElement>('[data-hero]');
+  if (hero && !reduce.matches) {
+    hero.addEventListener('pointermove', (e) => {
+      const r = hero.getBoundingClientRect();
+      hero.style.setProperty('--mx', String(((e.clientX - r.left) / r.width - 0.5).toFixed(3)));
+      hero.style.setProperty('--my', String(((e.clientY - r.top) / r.height - 0.5).toFixed(3)));
+    }, { passive: true });
+    hero.addEventListener('pointerleave', () => { hero.style.setProperty('--mx', '0'); hero.style.setProperty('--my', '0'); });
+  }
+
+  // 4) Typing effect for research directions (static text when reduced motion is requested)
+  const typed = document.getElementById('typed');
+  if (typed && !reduce.matches) {
+    try {
+      const words: string[] = JSON.parse(typed.dataset.words ?? '[]');
+      if (words.length) {
+        typed.classList.add('typing');
+        let w = 0, i = 0, del = false;
+        const tick = () => {
+          const word = words[w]!;
+          typed.textContent = word.slice(0, i);
+          if (!del && i === word.length) { del = true; setTimeout(tick, 1700); return; }
+          if (del && i === 0) { del = false; w = (w + 1) % words.length; }
+          i += del ? -1 : 1;
+          setTimeout(tick, del ? 30 : 70);
+        };
+        typed.textContent = '';
+        tick();
+      }
+    } catch { /* keep static text */ }
+  }
+
+  // 5) Back to top
+  const top = document.getElementById('to-top') as HTMLButtonElement | null;
+  if (top) {
+    const onScroll = () => { top.hidden = window.scrollY < 600; };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduce.matches ? 'auto' : 'smooth' }));
+  }
+
+  // 6) Accent buttons (header + mobile menu)
+  import('../lib/prefs').then(({ setAccent, isAccent, syncAccentButtons }) => {
+    syncAccentButtons();
+    document.querySelectorAll<HTMLButtonElement>('.accent-switch [data-accent]').forEach((b) =>
+      b.addEventListener('click', () => { const a = b.dataset.accent; if (isAccent(a)) setAccent(a); }));
+  });
+</script>

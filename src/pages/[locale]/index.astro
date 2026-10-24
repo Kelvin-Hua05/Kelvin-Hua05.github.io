@@ -1,0 +1,102 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Terminal from '../../components/Terminal.astro';
+import ResearchExplorer from '../../components/ResearchExplorer.astro';
+import Hero from '../../components/Hero.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import SkillGroup from '../../components/SkillGroup.astro';
+import Timeline from '../../components/Timeline.astro';
+import { staticPaths, altFor } from '../../lib/pages';
+import { isLocale, pick } from '../../i18n/locales';
+import { useT } from '../../i18n/translations';
+import { getProjects, getPosts } from '../../lib/content';
+import { skills } from '../../data/skills';
+import { education } from '../../data/education';
+import { experience } from '../../data/experience';
+import { contactLinks } from '../../data/social';
+import { site } from '../../data/site';
+export const getStaticPaths = staticPaths;
+const locale = Astro.params.locale;
+if (!isLocale(locale)) throw new Error('bad locale');
+const t = useT(locale);
+const featured = (await getProjects(locale)).filter((p) => p.data.featured).slice(0, 3);
+const posts = (await getPosts(locale)).slice(0, 3);
+const visibleSkills = skills.filter((g) => pick(g.category, locale) && g.items.length);
+const edu = education.map((e) => ({ title: e.institution, subtitle: e.degree, start: e.start, end: e.end, description: e.description, url: e.url }));
+const exp = experience.map((e) => ({ title: e.organization, subtitle: e.role, start: e.start, end: e.end, description: e.description, achievements: e.achievements, url: e.url }));
+const links = contactLinks();
+---
+<BaseLayout locale={locale} title={pick(site.title, locale)} description={t.seo.home} path={`/${locale}/`} alternates={altFor('')}>
+  <Hero locale={locale} />
+
+  <section class="section" aria-labelledby="terminal">
+    <div class="wrap two-col term-section">
+      <div>
+        <SectionHeading label="01" title={t.terminal.title} id="terminal" />
+        <p class="lead" style="margin-top:0">{t.terminal.lead}</p>
+      </div>
+      <Terminal locale={locale} />
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="research">
+    <div class="wrap">
+      <SectionHeading label="02" title={t.research.title} id="research" />
+      <p class="lead" style="margin:-1rem 0 2rem">{t.research.lead}</p>
+      <ResearchExplorer locale={locale} />
+    </div>
+  </section>
+
+  {featured.length > 0 && (
+    <section class="section" aria-labelledby="featured">
+      <div class="wrap">
+        <SectionHeading label="03" title={t.home.featured} id="featured" href={`/${locale}/projects/`} linkText={t.common.viewAll} />
+        <div class="grid-cards">{featured.map((p) => <ProjectCard project={p} locale={locale} />)}</div>
+      </div>
+    </section>
+  )}
+
+  {visibleSkills.length > 0 && (
+    <section class="section" aria-labelledby="skills">
+      <div class="wrap">
+        <SectionHeading label="04" title={t.home.skills} id="skills" />
+        <div class="skill-groups">{visibleSkills.map((g) => <SkillGroup group={g} locale={locale} />)}</div>
+      </div>
+    </section>
+  )}
+
+  {(edu.length > 0 || exp.length > 0) && (
+    <section class="section" aria-labelledby="eduexp">
+      <div class="wrap">
+        <SectionHeading label="05" title={t.home.eduExp} id="eduexp" href={`/${locale}/cv/`} linkText={t.nav.cv} />
+        <div class="two-col">
+          {edu.length > 0 && <div><h3 style="margin-bottom:1rem">{t.home.education}</h3><Timeline items={edu} locale={locale} /></div>}
+          {exp.length > 0 && <div><h3 style="margin-bottom:1rem">{t.home.experience}</h3><Timeline items={exp} locale={locale} /></div>}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {posts.length > 0 && (
+    <section class="section" aria-labelledby="latest">
+      <div class="wrap">
+        <SectionHeading label="06" title={t.home.latest} id="latest" href={`/${locale}/blog/`} linkText={t.common.viewAll} />
+        <div class="grid-cards">{posts.map((p) => <ArticleCard post={p} locale={locale} />)}</div>
+      </div>
+    </section>
+  )}
+
+  {links.length > 0 && (
+    <section class="section" aria-labelledby="contact">
+      <div class="wrap">
+        <SectionHeading label="07" title={t.home.contact} id="contact" href={`/${locale}/contact/`} linkText={t.nav.contact} />
+        <p class="lead" style="margin-top:0">{t.home.contactLead}</p>
+        <ul class="chips" style="margin-top:1.25rem">
+          {links.map((l) => <li><a class="btn" href={l.href} {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{l.label}{l.external && <span class="sr-only"> {t.common.externalNewTab}</span>}</a></li>)}
+        </ul>
+      </div>
+    </section>
+  )}
+</BaseLayout>

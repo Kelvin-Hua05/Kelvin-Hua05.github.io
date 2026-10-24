@@ -1,0 +1,16 @@
+---
+/** Runs before first paint: stored preference > system preference > dark / dual. Prevents a theme flash. */
+---
+<script is:inline>
+  (function () {
+    var r = document.documentElement, p = {};
+    r.classList.add('js');
+    try { p = JSON.parse(localStorage.getItem('cdp:v1:preferences') || '{}') || {}; } catch (e) {}
+    var t = p.theme;
+    if (t !== 'light' && t !== 'dark') {
+      t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    r.dataset.theme = t;
+    r.dataset.accent = p.accent === 'violet' || p.accent === 'cyan' ? p.accent : 'dual';
+  })();
+</script>

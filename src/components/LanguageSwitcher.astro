@@ -1,0 +1,16 @@
+---
+import Icon from './Icon.astro';
+import { withBase } from '../lib/url';
+import { localeMeta, otherLocale, type Locale } from '../i18n/locales';
+import { useT } from '../i18n/translations';
+interface Props { locale: Locale; alternates?: Partial<Record<Locale, string>>; fallbackSection?: string }
+const { locale, alternates = {}, fallbackSection = '' } = Astro.props;
+const target = otherLocale(locale);
+// Genuine translation if it exists, otherwise the matching section index (never a broken URL).
+const href = withBase(alternates[target] ?? `/${target}/${fallbackSection ? fallbackSection + '/' : ''}`);
+const tTarget = useT(target);
+const tHere = useT(locale);
+---
+<a class="icon-btn" href={href} lang={localeMeta[target].htmlLang} hreflang={localeMeta[target].hreflang} aria-label={`${tHere.nav.switchLanguage}: ${tTarget.nav.languageName}`}>
+  <Icon name="languages" /><span>{tTarget.nav.languageName}</span>
+</a>

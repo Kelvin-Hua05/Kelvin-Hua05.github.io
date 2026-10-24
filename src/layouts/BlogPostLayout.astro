@@ -1,0 +1,53 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import { withBase } from '../lib/url';
+import { formatDate, readingTimeOf, slugOf, type Post } from '../lib/content';
+import { useT, fmt } from '../i18n/translations';
+import type { Locale } from '../i18n/locales';
+interface Props { locale: Locale; post: Post; headings: { depth: number; slug: string; text: string }[]; prev?: Post; next?: Post; related: Post[]; alternates: Partial<Record<Locale, string>>; slug: string }
+const { locale, post, headings, prev, next, related, alternates, slug } = Astro.props;
+const t = useT(locale);
+const d = post.data;
+const toc = headings.filter((h) => h.depth <= 3);
+const hasToc = headings.filter((h) => h.depth === 2).length >= 3;
+---
+<BaseLayout locale={locale} title={d.title} description={d.description} path={`/${locale}/blog/${slug}/`} alternates={alternates} fallbackSection="blog" ogType="article">
+  <div class="wrap">
+    <header class="page-head">
+      <p><a href={withBase(`/${locale}/blog/`)}>← {t.blog.backToList}</a></p>
+      <h1 style="margin-top:1rem;max-width:44rem">{d.title}</h1>
+      <p class="lead">{d.description}</p>
+      <div class="meta" style="margin-top:1rem">
+        <span>{t.common.published}: <time datetime={d.date.toISOString()}>{formatDate(d.date, locale)}</time></span>
+        {d.updatedDate && <span>{t.common.updated}: <time datetime={d.updatedDate.toISOString()}>{formatDate(d.updatedDate, locale)}</time></span>}
+        <span>{fmt(t.common.minRead, { n: readingTimeOf(post) })}</span>
+        {d.category && <span>{t.blog.category}: {d.category}</span>}
+        {d.author && <span>{d.author}</span>}
+      </div>
+      {d.tags.length > 0 && <ul class="chips" style="margin-top:.9rem" aria-label={t.blog.tags}>{d.tags.map((x) => <li class="chip">{x}</li>)}</ul>}
+    </header>
+    <div class:list={['article-layout', hasToc && 'has-toc']}>
+      <article>
+        {d.sample && <p class="notice" role="note">{t.blog.sampleNotice}</p>}
+        <div class="prose"><slot /></div>
+        {(prev || next) && (
+          <nav class="pager" aria-label={`${t.blog.previous} / ${t.blog.next}`}>
+            {prev ? <a href={withBase(`/${locale}/blog/${slugOf(prev)}/`)} rel="prev"><small>← {t.blog.previous}</small>{prev.data.title}</a> : <span />}
+            {next ? <a class="next" href={withBase(`/${locale}/blog/${slugOf(next)}/`)} rel="next"><small>{t.blog.next} →</small>{next.data.title}</a> : <span />}
+          </nav>
+        )}
+      </article>
+      {hasToc && (
+        <nav class="toc" aria-label={t.blog.toc}>
+          <strong>{t.blog.toc}</strong>
+          <ol>{toc.map((h) => <li style={h.depth === 3 ? 'padding-left:.9rem' : undefined}><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+        </nav>
+      )}
+    </div>
+    {related.length > 0 && (
+      <section class="section" aria-labelledby="related"><h2 id="related" style="margin-bottom:1.5rem">{t.blog.related}</h2>
+        <div class="grid-cards">{related.map((p) => <ArticleCard post={p} locale={locale} />)}</div></section>
+    )}
+  </div>
+</BaseLayout>

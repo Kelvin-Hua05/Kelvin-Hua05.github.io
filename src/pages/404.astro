@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/url';
+import { translations } from '../i18n/translations';
+// Static hosting cannot detect the visitor's language, so the 404 page is bilingual.
+const en = translations.en, zh = translations['zh-tw'];
+---
+<BaseLayout locale="en" title={`${en.notFound.title} / ${zh.notFound.title}`} description={en.notFound.body} path="/404/">
+  <div class="wrap" style="padding-block:5rem;max-width:44rem">
+    <p class="label">404</p>
+    <h1 style="margin-top:.5rem">{en.notFound.title}</h1>
+    <p class="lead">{en.notFound.body}</p>
+    <h2 lang="zh-Hant-TW" style="margin-top:2.5rem;font-size:1.6rem">{zh.notFound.title}</h2>
+    <p class="lead" lang="zh-Hant-TW">{zh.notFound.body}</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href={withBase('/en/')} hreflang="en">{en.common.backHome}</a>
+      <a class="btn" href={withBase('/zh-tw/')} lang="zh-Hant-TW" hreflang="zh-TW">{zh.common.backHome}</a>
+    </div>
+  </div>
+</BaseLayout>

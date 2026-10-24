@@ -1,0 +1,43 @@
+---
+import Icon from './Icon.astro';
+import ChipVisual from './ChipVisual.astro';
+import { withBase } from '../lib/url';
+import { useT } from '../i18n/translations';
+import { pick, type Locale } from '../i18n/locales';
+import { profile } from '../data/profile';
+import { getCvUrl } from '../data/site';
+import { contactLinks } from '../data/social';
+const { locale } = Astro.props as { locale: Locale };
+const t = useT(locale);
+const cv = getCvUrl(locale);
+const headline = pick(profile.headline, locale);
+const bio = pick(profile.shortBio, locale);
+const hasContact = contactLinks().length > 0;
+const words = profile.interests.map((i) => pick(i, locale)).filter(Boolean);
+---
+<section class="hero" aria-labelledby="hero-title" data-hero>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="label">{t.home.kicker}</span>
+      <h1 id="hero-title">{profile.nameEn}{profile.nameZh && <span class="name-zh" lang="zh-Hant-TW">{profile.nameZh}</span>}</h1>
+      {headline && <p class="headline">{headline}</p>}
+      {words.length > 0 && (
+        <p class="typed-line mono">
+          <span class="sr-only">{t.hero.typedLabel}: {words.join(', ')}</span>
+          <span aria-hidden="true">&gt; </span><span id="typed" aria-hidden="true" data-words={JSON.stringify(words)}>{words.join(' · ')}</span>
+        </p>
+      )}
+      {bio && <p class="intro">{bio}</p>}
+      <div class="cta-row">
+        <a class="btn btn-primary" href={withBase(`/${locale}/projects/`)}>{t.home.viewProjects}<Icon name="arrow-right" /></a>
+        {cv && <a class="btn" href={cv} download>{t.home.downloadCv}<Icon name="download" /></a>}
+        {hasContact && <a class="btn" href={withBase(`/${locale}/contact/`)}>{t.home.contactMe}</a>}
+      </div>
+    </div>
+    <div>
+      {profile.image
+        ? <img class="profile-photo" src={withBase(profile.image)} alt={locale === 'en' ? `Portrait of ${profile.nameEn}` : `${profile.nameZh || profile.nameEn} 的個人照片`} width="320" height="400" />
+        : <ChipVisual locale={locale} />}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,25 @@
+---
+import { render } from 'astro:content';
+import BlogPostLayout from '../../../layouts/BlogPostLayout.astro';
+import { locales, otherLocale, isLocale, type Locale } from '../../../i18n/locales';
+import { getPosts, findTranslation, slugOf } from '../../../lib/content';
+export async function getStaticPaths() {
+  const out = [];
+  for (const locale of locales) for (const post of await getPosts(locale)) out.push({ params: { locale, slug: slugOf(post) }, props: { post } });
+  return out;
+}
+const locale = Astro.params.locale;
+if (!isLocale(locale)) throw new Error('bad locale');
+const { post } = Astro.props;
+const slug = slugOf(post);
+const { Content, headings } = await render(post);
+const tr = await findTranslation('blog', post.data.translationKey, otherLocale(locale));
+const alternates: Partial<Record<Locale, string>> = { [locale]: `/${locale}/blog/${slug}/` };
+if (tr) alternates[otherLocale(locale)] = `/${otherLocale(locale)}/blog/${tr.slug}/`;
+const all = await getPosts(locale); // newest first
+const i = all.findIndex((p) => p.id === post.id);
+const next = all[i - 1]; // newer
+const prev = all[i + 1]; // older
+const related = all.filter((p) => p.id !== post.id && p.data.tags.some((x) => post.data.tags.includes(x))).slice(0, 3);
+---
+<BlogPostLayout locale={locale} post={post} headings={headings} prev={prev} next={next} related={related} alternates={alternates} slug={slug}><Content /></BlogPostLayout>

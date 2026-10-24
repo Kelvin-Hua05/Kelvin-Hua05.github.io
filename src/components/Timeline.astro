@@ -1,0 +1,30 @@
+---
+import { pick, type Locale, type L10n } from '../i18n/locales';
+import { formatPeriodPart } from '../lib/content';
+import { useT } from '../i18n/translations';
+export interface TimelineItem { title: L10n; subtitle?: L10n; start?: string; end?: string; description?: L10n; achievements?: L10n[]; url?: string }
+interface Props { items: TimelineItem[]; locale: Locale }
+const { items, locale } = Astro.props;
+const t = useT(locale);
+const visible = items.filter((i) => pick(i.title, locale));
+const period = (i: TimelineItem) => {
+  const s = formatPeriodPart(i.start, locale);
+  const e = i.end ? formatPeriodPart(i.end, locale) : t.common.present;
+  return s ? `${s} – ${e}` : '';
+};
+---
+{visible.length > 0 && (
+  <ol class="timeline">
+    {visible.map((i) => (
+      <li>
+        <h4>{i.url ? <a href={i.url} target="_blank" rel="noopener noreferrer">{pick(i.title, locale)}<span class="sr-only"> {t.common.externalNewTab}</span></a> : pick(i.title, locale)}</h4>
+        {pick(i.subtitle, locale) && <p>{pick(i.subtitle, locale)}</p>}
+        {period(i) && <p class="meta">{period(i)}</p>}
+        {pick(i.description, locale) && <p>{pick(i.description, locale)}</p>}
+        {i.achievements && i.achievements.filter((a) => pick(a, locale)).length > 0 && (
+          <ul>{i.achievements.map((a) => pick(a, locale) && <li>{pick(a, locale)}</li>)}</ul>
+        )}
+      </li>
+    ))}
+  </ol>
+)}

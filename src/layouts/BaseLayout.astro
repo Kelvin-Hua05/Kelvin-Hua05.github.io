@@ -1,0 +1,43 @@
+---
+import '../styles/global.css';
+import ThemeInit from '../components/ThemeInit.astro';
+import SEO from '../components/SEO.astro';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import Interactions from '../components/Interactions.astro';
+import { localeMeta, type Locale } from '../i18n/locales';
+import { useT } from '../i18n/translations';
+import { profile } from '../data/profile';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  path: string;
+  alternates?: Partial<Record<Locale, string>>;
+  /** Section index used by the language switcher when no translation exists: 'blog' | 'projects' | ''. */
+  fallbackSection?: string;
+  ogType?: 'website' | 'article';
+}
+const { locale, title, description, path, alternates, fallbackSection, ogType } = Astro.props;
+const t = useT(locale);
+const fullTitle = `${title} · ${profile.nameEn}`;
+---
+<!doctype html>
+<html lang={localeMeta[locale].htmlLang} data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0f14" />
+    <ThemeInit />
+    <SEO title={fullTitle} description={description} locale={locale} path={path} alternates={alternates} ogType={ogType} />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t.meta.skip}</a>
+    <Navbar locale={locale} path={path} alternates={alternates} fallbackSection={fallbackSection} />
+    <main id="main" tabindex="-1"><slot /></main>
+    <Interactions locale={locale} />
+    <Footer locale={locale} alternates={alternates} fallbackSection={fallbackSection} />
+  </body>
+</html>

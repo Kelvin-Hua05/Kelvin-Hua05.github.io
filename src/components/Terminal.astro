@@ -1,0 +1,94 @@
+---
+import { useT } from '../i18n/translations';
+import { pick, type Locale } from '../i18n/locales';
+import { profile } from '../data/profile';
+import { education } from '../data/education';
+import { experience } from '../data/experience';
+import { skills } from '../data/skills';
+import { research } from '../data/research';
+import { contactLinks } from '../data/social';
+import { getProjects } from '../lib/content';
+const { locale } = Astro.props as { locale: Locale };
+const t = useT(locale);
+const s = t.terminal;
+const projects = (await getProjects(locale)).map((p) => `${p.data.title} — ${p.data.description}`);
+const data = {
+  strings: s,
+  accentNames: { dual: t.accent.dual, violet: t.accent.violet, cyan: t.accent.cyan },
+  help: [['help', s.d_help], ['about', s.d_about], ['research', s.d_research], ['education', s.d_education], ['skills', s.d_skills], ['projects', s.d_projects], ['contact', s.d_contact], ['theme <name>', s.d_theme], ['clear', s.d_clear]],
+  about: [profile.nameEn + (profile.nameZh ? ` (${profile.nameZh})` : ''), pick(profile.headline, locale), pick(profile.shortBio, locale)].filter(Boolean),
+  research: research.map((r) => `${pick(r.title, locale)} — ${pick(r.summary, locale)}`),
+  education: education.map((e) => `${pick(e.institution, locale)} / ${pick(e.degree, locale)}`),
+  experience: experience.map((e) => `${pick(e.organization, locale)} / ${pick(e.role, locale)}`),
+  skills: skills.map((g) => `${pick(g.category, locale)}: ${g.items.map((i) => i.name).join(', ')}`),
+  projects,
+  contact: contactLinks().map((l) => `${l.label}: ${l.href.replace('mailto:', '')}`),
+};
+const json = JSON.stringify(data).replace(/</g, '\\u003c');
+const quick = ['help', 'research', 'education', 'theme cyan', 'theme violet', 'theme dual'];
+---
+<div class="term" id="term" data-scan>
+  <div class="term-bar"><span class="mono">{s.title}</span><span class="mono term-sim">{s.sim}</span></div>
+  <div class="term-out" id="term-out" role="log" aria-live="polite" aria-label={s.title} tabindex="0"></div>
+  <form class="term-form" id="term-form" autocomplete="off">
+    <label for="term-input" class="mono term-prompt"><span class="sr-only">{s.inputLabel}: </span><span aria-hidden="true">{s.prompt}</span></label>
+    <input id="term-input" class="mono" type="text" spellcheck="false" autocapitalize="none" autocomplete="off" enterkeyhint="send" placeholder={s.hint} />
+    <button type="submit" class="term-run">{s.run}</button>
+  </form>
+  <div class="term-quick" role="group" aria-label={s.quick}>
+    {quick.map((c) => <button type="button" class="mono" data-cmd={c}>{c}</button>)}
+  </div>
+  <script type="application/json" id="term-data" set:html={json} />
+</div>
+<script>
+  import { setAccent, isAccent } from '../lib/prefs';
+  const root = document.getElementById('term');
+  const out = document.getElementById('term-out') as HTMLElement | null;
+  const form = document.getElementById('term-form') as HTMLFormElement | null;
+  const input = document.getElementById('term-input') as HTMLInputElement | null;
+  const raw = document.getElementById('term-data')?.textContent;
+  if (root && out && form && input && raw) {
+    const d = JSON.parse(raw);
+    const S = d.strings as Record<string, string>;
+    const history: string[] = [];
+    let hIdx = 0;
+    const line = (text: string, cls = '') => {
+      const el = document.createElement('div');
+      el.className = `term-line ${cls}`.trim();
+      el.textContent = text; // textContent only: output is never interpreted as HTML
+      out.appendChild(el);
+    };
+    const list = (items: string[], empty: string) => (items.length ? items.forEach((i) => line('• ' + i)) : line(empty, 'muted'));
+    const commands: Record<string, (args: string[]) => void> = {
+      help: () => { line(S.help); (d.help as string[][]).forEach(([c, desc]) => line(`  ${c.padEnd(14)} ${desc}`)); },
+      about: () => (d.about as string[]).forEach((l) => line(l)),
+      research: () => list(d.research, ''),
+      education: () => list([...d.education, ...d.experience], ''),
+      skills: () => list(d.skills, S.noSkills),
+      projects: () => list(d.projects, S.noProjects),
+      contact: () => list(d.contact, S.noContact),
+      theme: (args) => {
+        const a = args[0];
+        if (isAccent(a)) { setAccent(a); line(S.themeSet.replace('{name}', d.accentNames[a]), 'ok'); } else line(S.themeUsage, 'err');
+      },
+      clear: () => { out.textContent = ''; },
+    };
+    const run = (cmdline: string) => {
+      const text = cmdline.trim();
+      if (!text) return;
+      history.push(text); hIdx = history.length;
+      line(`${S.prompt} ${text}`, 'echo');
+      const [name, ...args] = text.split(/\s+/);
+      const fn = commands[name!.toLowerCase()];
+      if (fn) fn(args); else line(S.unknown.replace('{cmd}', name!), 'err');
+      out.scrollTop = out.scrollHeight;
+    };
+    line(S.hint, 'muted');
+    form.addEventListener('submit', (e) => { e.preventDefault(); run(input.value); input.value = ''; });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowUp' && history.length) { e.preventDefault(); hIdx = Math.max(0, hIdx - 1); input.value = history[hIdx] ?? ''; }
+      if (e.key === 'ArrowDown' && history.length) { e.preventDefault(); hIdx = Math.min(history.length, hIdx + 1); input.value = history[hIdx] ?? ''; }
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-cmd]').forEach((b) => b.addEventListener('click', () => run(b.dataset.cmd!)));
+  }
+</script>

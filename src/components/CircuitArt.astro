@@ -1,0 +1,20 @@
+---
+/** Deterministic circuit-trace thumbnail used when a project has no image. */
+interface Props { seed: string }
+const { seed } = Astro.props;
+let h = 2166136261;
+for (const c of seed) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+const rnd = () => { h = (Math.imul(h, 1664525) + 1013904223) >>> 0; return h / 4294967296; };
+const traces = Array.from({ length: 7 }, (_, i) => {
+  const y = 20 + i * 22 + Math.round(rnd() * 6);
+  const x1 = 10 + Math.round(rnd() * 60), x2 = 100 + Math.round(rnd() * 60), x3 = 170 + Math.round(rnd() * 20);
+  const dy = (Math.round(rnd() * 3) - 1) * 22;
+  return { d: `M0 ${y} H${x1} V${y + dy} H${x2} V${y} H${x3 + 40} `, cx: x2, cy: y };
+});
+---
+<svg viewBox="0 0 240 160" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid slice">
+  <g opacity="0.55">{traces.map((t) => <path d={t.d} />)}</g>
+  <g fill="var(--bg-2)" stroke="var(--accent-2)">{traces.map((t) => <circle cx={t.cx} cy={t.cy} r="2.6" />)}</g>
+  <rect x="88" y="54" width="64" height="52" rx="2" fill="var(--bg-2)" stroke="currentColor" />
+  <rect x="98" y="64" width="44" height="32" rx="1" stroke="var(--accent-2)" />
+</svg>

@@ -1,0 +1,94 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { staticPaths, altFor } from '../../lib/pages';
+import { isLocale, pick, type L10n } from '../../i18n/locales';
+import { useT } from '../../i18n/translations';
+import { profile } from '../../data/profile';
+import { education } from '../../data/education';
+import { experience } from '../../data/experience';
+import { skills } from '../../data/skills';
+import { publications, awards, certifications, languages, type CvEntry } from '../../data/cv';
+import { contactLinks } from '../../data/social';
+import { getCvUrl } from '../../data/site';
+import { getProjects, formatPeriodPart } from '../../lib/content';
+import { withBase } from '../../lib/url';
+const locale = Astro.params.locale;
+export const getStaticPaths = staticPaths;
+if (!isLocale(locale)) throw new Error('bad locale');
+const t = useT(locale);
+const cv = getCvUrl(locale);
+const bio = pick(profile.longBio, locale) || pick(profile.shortBio, locale);
+const interests = profile.interests.map((i) => pick(i, locale)).filter(Boolean);
+const research = experience.filter((e) => e.kind === 'research');
+const work = experience.filter((e) => e.kind !== 'research');
+const projects = (await getProjects(locale)).filter((p) => p.data.featured && !p.data.sample);
+const links = contactLinks();
+const period = (s?: string, e?: string) => { const a = formatPeriodPart(s, locale); return a ? `${a} – ${e ? formatPeriodPart(e, locale) : t.common.present}` : ''; };
+const vis = (xs: CvEntry[]) => xs.filter((x) => pick(x.title, locale));
+const exps = (xs: typeof experience) => xs.filter((e) => pick(e.organization, locale) || pick(e.role, locale));
+---
+<BaseLayout locale={locale} title={t.cv.title} description={t.seo.cv} path={`/${locale}/cv/`} alternates={altFor('cv')}>
+  <div class="wrap" style="max-width:52rem">
+    <header class="page-head">
+      <h1>{profile.nameEn}{profile.nameZh && <span lang="zh-Hant-TW" style="font-weight:500"> {profile.nameZh}</span>}</h1>
+      <p class="lead">{pick(profile.headline, locale)}</p>
+      <div class="cta-row no-print">
+        {cv && <a class="btn btn-primary" href={cv} download><Icon name="download" />{t.cv.download}</a>}
+        <button class="btn" type="button" id="print-btn"><Icon name="printer" />{t.common.print}</button>
+      </div>
+    </header>
+
+    {bio && <section class="cv-section"><h2>{t.cv.profile}</h2><p>{bio}</p></section>}
+
+    {education.length > 0 && (
+      <section class="cv-section"><h2>{t.cv.education}</h2>
+        {education.map((e) => (
+          <div class="cv-entry"><h3>{pick(e.degree, locale)}{pick(e.field, locale) && `, ${pick(e.field, locale)}`}</h3>
+            <p class="meta">{[pick(e.institution, locale), period(e.start, e.end)].filter(Boolean).join(' · ')}</p>
+            {pick(e.description, locale) && <p>{pick(e.description, locale)}</p>}</div>
+        ))}
+      </section>
+    )}
+
+    {interests.length > 0 && <section class="cv-section"><h2>{t.cv.interests}</h2><ul class="chips">{interests.map((i) => <li class="chip">{i}</li>)}</ul></section>}
+
+    {skills.length > 0 && (
+      <section class="cv-section"><h2>{t.cv.skills}</h2>
+        {skills.filter((g) => pick(g.category, locale)).map((g) => <p><strong>{pick(g.category, locale)}:</strong> {g.items.map((i) => i.name).join(', ')}</p>)}
+      </section>
+    )}
+
+    {[{ k: 'research', title: t.cv.research, list: exps(research) }, { k: 'work', title: t.cv.work, list: exps(work) }].map((g) => g.list.length > 0 && (
+      <section class="cv-section"><h2>{g.title}</h2>
+        {g.list.map((e) => (
+          <div class="cv-entry"><h3>{pick(e.role, locale)}</h3>
+            <p class="meta">{[pick(e.organization, locale), period(e.start, e.end)].filter(Boolean).join(' · ')}</p>
+            {pick(e.description, locale) && <p>{pick(e.description, locale)}</p>}
+            {e.achievements && e.achievements.length > 0 && <ul>{e.achievements.map((a) => pick(a, locale) && <li>{pick(a, locale)}</li>)}</ul>}</div>
+        ))}
+      </section>
+    ))}
+
+    {projects.length > 0 && (
+      <section class="cv-section"><h2>{t.cv.projects}</h2>
+        <ul>{projects.map((p) => <li><a href={withBase(`/${locale}/projects/${p.id.split('/').slice(1).join('/')}/`)}>{p.data.title}</a> — {p.data.description}</li>)}</ul>
+      </section>
+    )}
+
+    {[{ title: t.cv.publications, list: vis(publications) }, { title: t.cv.awards, list: vis(awards) }, { title: t.cv.certifications, list: vis(certifications) }, { title: t.cv.languages, list: vis(languages) }].map((g) => g.list.length > 0 && (
+      <section class="cv-section"><h2>{g.title}</h2>
+        <ul>{g.list.map((x) => <li>{x.url ? <a href={x.url}>{pick(x.title, locale)}</a> : pick(x.title, locale)}{pick(x.detail as L10n, locale) && ` — ${pick(x.detail, locale)}`}{x.year && ` (${x.year})`}</li>)}</ul>
+      </section>
+    ))}
+
+    {links.length > 0 && (
+      <section class="cv-section"><h2>{t.cv.contact}</h2>
+        <ul>{links.map((l) => <li>{l.label}: <a href={l.href}>{l.href.replace('mailto:', '')}</a></li>)}</ul>
+      </section>
+    )}
+  </div>
+</BaseLayout>
+<script>
+  document.getElementById('print-btn')?.addEventListener('click', () => window.print());
+</script>

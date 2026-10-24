@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import Timeline from '../../components/Timeline.astro';
+import { staticPaths, altFor } from '../../lib/pages';
+import { isLocale, pick } from '../../i18n/locales';
+import { useT } from '../../i18n/translations';
+import { profile } from '../../data/profile';
+import { education } from '../../data/education';
+const locale = Astro.params.locale;
+export const getStaticPaths = staticPaths;
+if (!isLocale(locale)) throw new Error('bad locale');
+const t = useT(locale);
+const a = profile.about;
+const sections = [
+  { id: 'intro', title: t.about.intro, text: pick(profile.longBio, locale) || pick(profile.shortBio, locale) },
+  { id: 'technical', title: t.about.technical, text: pick(a.technicalInterests, locale) },
+  { id: 'problem', title: t.about.problemSolving, text: pick(a.problemSolving, locale) },
+  { id: 'learning', title: t.about.learning, text: pick(a.learning, locale) },
+  { id: 'current', title: t.about.current, text: pick(a.currentFocus, locale) },
+  { id: 'future', title: t.about.future, text: pick(a.futureDirection, locale) },
+].filter((s) => s.text);
+const interests = profile.interests.map((i) => pick(i, locale)).filter(Boolean);
+const edu = education.map((e) => ({ title: e.institution, subtitle: e.degree, start: e.start, end: e.end, description: e.description, url: e.url }));
+---
+<BaseLayout locale={locale} title={t.about.title} description={t.seo.about} path={`/${locale}/about/`} alternates={altFor('about')}>
+  <div class="wrap">
+    <header class="page-head"><h1>{t.about.title}</h1><p class="lead">{t.about.lead}</p></header>
+    {sections.map((s) => (
+      <section class="section" aria-labelledby={s.id}><SectionHeading title={s.title} id={s.id} /><div class="prose"><p>{s.text}</p></div></section>
+    ))}
+    {edu.length > 0 && <section class="section" aria-labelledby="academic"><SectionHeading title={t.about.academic} id="academic" /><Timeline items={edu} locale={locale} /></section>}
+    {interests.length > 0 && <section class="section" aria-labelledby="ri"><SectionHeading title={t.about.interests} id="ri" /><ul class="interest-list">{interests.map((i) => <li>{i}</li>)}</ul></section>}
+  </div>
+</BaseLayout>

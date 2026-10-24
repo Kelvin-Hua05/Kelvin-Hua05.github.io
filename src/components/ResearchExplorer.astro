@@ -1,0 +1,67 @@
+---
+import { useT } from '../i18n/translations';
+import { pick, type Locale } from '../i18n/locales';
+import { research } from '../data/research';
+const { locale } = Astro.props as { locale: Locale };
+const t = useT(locale);
+---
+<div class="rx" id="rx">
+  <div class="rx-tabs" role="tablist" aria-label={t.research.tablist} hidden>
+    {research.map((r, i) => (
+      <button type="button" role="tab" class="rx-tab" id={`rx-tab-${r.id}`} aria-controls={`rx-panel-${r.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>
+        <span class="mono rx-n" aria-hidden="true">0{i + 1}</span>{pick(r.title, locale)}
+      </button>
+    ))}
+  </div>
+  {research.map((r) => (
+    <section class="rx-panel" id={`rx-panel-${r.id}`} role="tabpanel" aria-labelledby={`rx-tab-${r.id}`} data-panel={r.id}>
+      <h3 class="rx-title">{pick(r.title, locale)}</h3>
+      <p class="rx-summary">{pick(r.summary, locale)}</p>
+      <ul class="chips" style="margin-top:.9rem">{r.tags.map((x) => <li class="chip">{x}</li>)}</ul>
+      <h4 class="rx-sub">{t.research.workflow}</h4>
+      <ol class="rx-steps" aria-label={t.research.steps}>
+        {r.steps.map((st, j) => (
+          <li>
+            <button type="button" class="rx-step" aria-pressed={j === 0 ? 'true' : 'false'} data-desc={pick(st.desc, locale)}>
+              <span class="mono rx-sn" aria-hidden="true">{j + 1}</span>{pick(st.name, locale)}
+            </button>
+          </li>
+        ))}
+      </ol>
+      <p class="rx-desc" aria-live="polite">{pick(r.steps[0]!.desc, locale)}</p>
+      <p class="muted rx-note">{t.research.workflowNote}</p>
+    </section>
+  ))}
+</div>
+<script>
+  const root = document.getElementById('rx');
+  if (root) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role=tab]'));
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[role=tabpanel]'));
+    const tablist = root.querySelector<HTMLElement>('[role=tablist]');
+    if (tablist) tablist.hidden = false; // progressive enhancement: without JS all panels stay visible
+    const select = (idx: number, focus = false) => {
+      tabs.forEach((t, i) => { t.setAttribute('aria-selected', String(i === idx)); t.tabIndex = i === idx ? 0 : -1; });
+      panels.forEach((p, i) => { p.hidden = i !== idx; });
+      if (focus) tabs[idx]?.focus();
+    };
+    select(0);
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(i));
+      t.addEventListener('keydown', (e) => {
+        const k = e.key;
+        const map: Record<string, number> = { ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 };
+        if (k in map) { e.preventDefault(); select(map[k]!, true); }
+      });
+    });
+    root.querySelectorAll<HTMLElement>('.rx-steps').forEach((ol) => {
+      const desc = ol.parentElement!.querySelector<HTMLElement>('.rx-desc')!;
+      ol.addEventListener('click', (e) => {
+        const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.rx-step');
+        if (!b) return;
+        ol.querySelectorAll('.rx-step').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        desc.textContent = b.dataset.desc ?? '';
+      });
+    });
+  }
+</script>

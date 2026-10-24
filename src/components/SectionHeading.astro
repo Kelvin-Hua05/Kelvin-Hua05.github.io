@@ -1,0 +1,12 @@
+---
+import { withBase } from '../lib/url';
+interface Props { label?: string; title: string; href?: string; linkText?: string; id?: string }
+const { label, title, href, linkText, id } = Astro.props;
+---
+<div class="sec-head">
+  <div>
+    {label && <span class="label" aria-hidden="true">{label}</span>}
+    <h2 id={id}>{title}</h2>
+  </div>
+  {href && linkText && <a href={withBase(href)}>{linkText} →</a>}
+</div>

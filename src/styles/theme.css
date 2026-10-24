@@ -1,0 +1,49 @@
+/* Design tokens. Neutral base + 3 selectable accent sets (data-accent) x 2 themes (data-theme).
+   Default = dark + "dual" (violet engineering + cyan terminal). */
+:root {
+  color-scheme: dark;
+  --bg: #07080d;
+  --bg-2: #10111a;
+  --surface: #171925;
+  --text: #f4f7ff;
+  --text-2: #b4b9cd;
+  --text-muted: #969aaf;
+  --border: #292b3a;
+  --border-soft: #1d1f2c;
+  --code-bg: #0c0d15;
+  --focus: #00e5ff;
+  --accent-ink: #07080d;
+  --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px rgb(0 0 0 / 0.35);
+  /* accent set: dual (default) */
+  --accent: #a78bfa;           /* violet: identity / engineering */
+  --accent-2: #00e5ff;         /* cyan: data / terminal */
+  --glow-a: 139 92 246;
+  --glow-b: 0 229 255;
+  --grid-line: rgb(var(--glow-a) / 0.07);
+  /* terminal surface is always dark */
+  --term-bg: #05090d;
+  --term-surface: #09131a;
+  --term-text: #c7f7ff;
+  --term-muted: #7196a1;
+  --term-accent: #00e5ff;
+  --ok: #4ade80;
+  --font-sans: 'Inter', 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Consolas, 'Noto Sans TC', monospace;
+  --maxw: 72rem;
+  --prose: 44rem;
+  --radius: 6px;
+}
+:root[data-accent='violet'] { --accent: #a78bfa; --accent-2: #9a73f7; --glow-a: 139 92 246; --glow-b: 167 139 250; --term-accent: #c4b5fd; --focus: #c4b5fd; }
+:root[data-accent='cyan'] { --accent: #00e5ff; --accent-2: #5ba0ff; --glow-a: 0 229 255; --glow-b: 49 133 255; --term-accent: #00e5ff; --focus: #00e5ff; }
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f6fb; --bg-2: #ecedf6; --surface: #ffffff;
+  --text: #0e1020; --text-2: #3e4260; --text-muted: #565b78;
+  --border: #c9ccdd; --border-soft: #dcdeea; --code-bg: #f0f1f8;
+  --accent-ink: #ffffff;
+  --accent: #6a3fd6; --accent-2: #006a7a; --focus: #6a3fd6;
+  --shadow: 0 1px 2px rgb(14 16 32 / 0.06), 0 8px 24px rgb(14 16 32 / 0.06);
+}
+:root[data-theme='light'][data-accent='violet'] { --accent: #6a3fd6; --accent-2: #5b2fc4; --focus: #6a3fd6; }
+:root[data-theme='light'][data-accent='cyan'] { --accent: #006f82; --accent-2: #1f5fcc; --focus: #006f82; }

@@ -1,0 +1,23 @@
+---
+import { withBase } from '../lib/url';
+import { slugOf, formatDate, readingTimeOf, type Post } from '../lib/content';
+import { useT, fmt } from '../i18n/translations';
+import type { Locale } from '../i18n/locales';
+interface Props { post: Post; locale: Locale }
+const { post, locale } = Astro.props;
+const { data } = post;
+const t = useT(locale);
+const href = withBase(`/${locale}/blog/${slugOf(post)}/`);
+---
+<article class="card">
+  <div class="card-body">
+    <div class="meta">
+      <time datetime={data.date.toISOString()}>{formatDate(data.date, locale)}</time>
+      <span>{fmt(t.common.minRead, { n: readingTimeOf(post) })}</span>
+      {data.sample && <span class="chip chip-sample">{t.common.sample}</span>}
+    </div>
+    <h3><a href={href}>{data.title}</a></h3>
+    <p>{data.excerpt ?? data.description}</p>
+    {data.tags.length > 0 && <ul class="chips" aria-label={t.blog.tags}>{data.tags.map((tag) => <li class="chip">{tag}</li>)}</ul>}
+  </div>
+</article>

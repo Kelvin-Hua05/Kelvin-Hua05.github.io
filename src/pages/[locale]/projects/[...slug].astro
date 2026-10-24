@@ -1,0 +1,22 @@
+---
+import { render } from 'astro:content';
+import ProjectLayout from '../../../layouts/ProjectLayout.astro';
+import { locales, otherLocale, isLocale, type Locale } from '../../../i18n/locales';
+import { getProjects, findTranslation, slugOf } from '../../../lib/content';
+export async function getStaticPaths() {
+  const out = [];
+  for (const locale of locales) for (const project of await getProjects(locale)) out.push({ params: { locale, slug: slugOf(project) }, props: { project } });
+  return out;
+}
+const locale = Astro.params.locale;
+if (!isLocale(locale)) throw new Error('bad locale');
+const { project } = Astro.props;
+const slug = slugOf(project);
+const { Content, headings } = await render(project);
+const tr = await findTranslation('projects', project.data.translationKey, otherLocale(locale));
+const alternates: Partial<Record<Locale, string>> = { [locale]: `/${locale}/projects/${slug}/` };
+if (tr) alternates[otherLocale(locale)] = `/${otherLocale(locale)}/projects/${tr.slug}/`;
+const all = await getProjects(locale);
+const related = project.data.relatedProjectIds.map((k) => all.find((p) => p.data.translationKey === k)).filter((p) => !!p);
+---
+<ProjectLayout locale={locale} project={project} headings={headings} related={related} alternates={alternates} slug={slug}><Content /></ProjectLayout>

@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { staticPaths, altFor } from '../../lib/pages';
+import { isLocale } from '../../i18n/locales';
+import { useT } from '../../i18n/translations';
+import { contactLinks } from '../../data/social';
+const locale = Astro.params.locale;
+export const getStaticPaths = staticPaths;
+if (!isLocale(locale)) throw new Error('bad locale');
+const t = useT(locale);
+const links = contactLinks();
+const display = (href: string) => href.replace(/^mailto:/, '').replace(/^https?:\/\//, '').replace(/\/$/, '');
+---
+<BaseLayout locale={locale} title={t.contact.title} description={t.seo.contact} path={`/${locale}/contact/`} alternates={altFor('contact')}>
+  <div class="wrap">
+    <header class="page-head"><h1>{t.contact.title}</h1><p class="lead">{t.contact.lead}</p></header>
+    <section class="section" id="contact-panel" data-copied={t.common.copied} data-failed={t.common.copyFailed}>
+      {links.length === 0 && <p class="muted">{t.contact.none}</p>}
+      {links.length > 0 && (
+        <ul class="contact-list">
+          {links.map((l) => (
+            <li class="contact-row">
+              <span class="label" aria-hidden="true">{l.label}</span>
+              <a class="mono contact-val" href={l.href} {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{display(l.href)}{l.external && <span class="sr-only"> {t.common.externalNewTab}</span>}</a>
+              <button type="button" class="btn copy-btn" data-copy={display(l.href)} data-what={l.label} aria-label={`${t.common.copy}: ${l.label}`}><Icon name="link" />{t.common.copy}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p id="copy-status" class="mono copy-status" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+</BaseLayout>
+<script>
+  const panel = document.getElementById('contact-panel');
+  const status = document.getElementById('copy-status');
+  let timer: number | undefined;
+  const say = (msg: string) => { if (!status) return; status.textContent = msg; clearTimeout(timer); timer = window.setTimeout(() => { status.textContent = ''; }, 3500); };
+  panel?.addEventListener('click', async (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.copy-btn');
+    if (!b) return;
+    try {
+      await navigator.clipboard.writeText(b.dataset.copy!);
+      say(panel.dataset.copied!.replace('{what}', b.dataset.what!));
+    } catch { say(panel.dataset.failed!); }
+  });
+</script>

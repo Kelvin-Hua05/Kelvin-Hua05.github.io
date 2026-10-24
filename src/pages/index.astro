@@ -1,0 +1,35 @@
+---
+import '../styles/global.css';
+import ThemeInit from '../components/ThemeInit.astro';
+import SEO from '../components/SEO.astro';
+import Icon from '../components/Icon.astro';
+import { withBase } from '../lib/url';
+import { profile } from '../data/profile';
+import { translations } from '../i18n/translations';
+import { pick } from '../i18n/locales';
+import { site } from '../data/site';
+const title = `${profile.nameEn} · ${pick(site.title, 'en')} / ${pick(site.title, 'zh-tw')}`;
+const description = `${pick(site.description, 'en')} ${pick(site.description, 'zh-tw')}`;
+---
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0f14" />
+    <ThemeInit />
+    <SEO title={title} description={description} locale="en" path="/" alternates={{ en: '/en/', 'zh-tw': '/zh-tw/' }} />
+  </head>
+  <body class="grid-bg" style="min-height:100vh">
+    <main class="wrap" style="padding-block:6rem 4rem;max-width:48rem">
+      <Icon name="cpu" class="" />
+      <h1 style="font-size:clamp(2.2rem,6vw,3.4rem);margin-top:1rem">{profile.nameEn}{profile.nameZh && <span lang="zh-Hant-TW" style="font-weight:500"> {profile.nameZh}</span>}</h1>
+      <p class="lead" lang="en">{pick(site.description, 'en')}</p>
+      <p class="lead" lang="zh-Hant-TW">{pick(site.description, 'zh-tw')}</p>
+      <div class="lang-cards">
+        <a class="lang-card" href={withBase('/en/')} lang="en" hreflang="en"><strong>English</strong><span>{translations.en.home.kicker}</span></a>
+        <a class="lang-card" href={withBase('/zh-tw/')} lang="zh-Hant-TW" hreflang="zh-TW"><strong>繁體中文</strong><span>{translations['zh-tw'].home.kicker}</span></a>
+      </div>
+    </main>
+  </body>
+</html>

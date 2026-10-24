@@ -1,0 +1,50 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import { withBase } from '../lib/url';
+import { formatDate, type Project } from '../lib/content';
+import { useT } from '../i18n/translations';
+import type { Locale } from '../i18n/locales';
+interface Props { locale: Locale; project: Project; headings: { depth: number; slug: string; text: string }[]; related: Project[]; alternates: Partial<Record<Locale, string>>; slug: string }
+const { locale, project, headings, related, alternates, slug } = Astro.props;
+const t = useT(locale);
+const d = project.data;
+const toc = headings.filter((h) => h.depth === 2);
+---
+<BaseLayout locale={locale} title={d.title} description={d.description} path={`/${locale}/projects/${slug}/`} alternates={alternates} fallbackSection="projects">
+  <div class="wrap">
+    <header class="page-head">
+      <p><a href={withBase(`/${locale}/projects/`)}>← {t.projects.backToList}</a></p>
+      <div class="chips" style="margin-top:1rem"><span class="chip">{d.category}</span>{d.sample && <span class="chip chip-sample">{t.common.sample}</span>}</div>
+      <h1 style="margin-top:.75rem">{d.title}</h1>
+      <p class="lead">{d.description}</p>
+      <div class="meta" style="margin-top:1rem">
+        <span>{t.projects.date}: <time datetime={d.date.toISOString()}>{formatDate(d.date, locale)}</time></span>
+        {d.updatedDate && <span>{t.common.updated}: <time datetime={d.updatedDate.toISOString()}>{formatDate(d.updatedDate, locale)}</time></span>}
+      </div>
+      {d.tags.length > 0 && <ul class="chips" style="margin-top:.9rem" aria-label={t.projects.tags}>{d.tags.map((x) => <li class="chip">{x}</li>)}</ul>}
+      {(d.githubUrl || d.demoUrl) && (
+        <div class="cta-row">
+          {d.githubUrl && <a class="btn" href={d.githubUrl} target="_blank" rel="noopener noreferrer">{t.common.github}<span class="sr-only"> {t.common.externalNewTab}</span></a>}
+          {d.demoUrl && <a class="btn" href={d.demoUrl} target="_blank" rel="noopener noreferrer">{t.common.demo}<span class="sr-only"> {t.common.externalNewTab}</span></a>}
+        </div>
+      )}
+    </header>
+    <div class:list={['article-layout', toc.length >= 3 && 'has-toc']}>
+      <article>
+        {d.sample && <p class="notice" role="note">{t.projects.sampleNotice}</p>}
+        <div class="prose"><slot /></div>
+      </article>
+      {toc.length >= 3 && (
+        <nav class="toc" aria-label={t.common.onThisPage}>
+          <strong>{t.common.onThisPage}</strong>
+          <ol>{toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+        </nav>
+      )}
+    </div>
+    {related.length > 0 && (
+      <section class="section" aria-labelledby="related"><h2 id="related" style="margin-bottom:1.5rem">{t.projects.related}</h2>
+        <div class="grid-cards">{related.map((p) => <ProjectCard project={p} locale={locale} />)}</div></section>
+    )}
+  </div>
+</BaseLayout>

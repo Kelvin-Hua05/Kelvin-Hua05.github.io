@@ -1,0 +1,71 @@
+---
+import Icon from './Icon.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import AccentSwitcher from './AccentSwitcher.astro';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import { withBase } from '../lib/url';
+import { useT } from '../i18n/translations';
+import { profile } from '../data/profile';
+import type { Locale } from '../i18n/locales';
+interface Props { locale: Locale; path: string; alternates?: Partial<Record<Locale, string>>; fallbackSection?: string }
+const { locale, path, alternates, fallbackSection } = Astro.props;
+const t = useT(locale);
+const items = [
+  { key: 'home', href: `/${locale}/`, label: t.nav.home },
+  { key: 'about', href: `/${locale}/about/`, label: t.nav.about },
+  { key: 'projects', href: `/${locale}/projects/`, label: t.nav.projects },
+  { key: 'blog', href: `/${locale}/blog/`, label: t.nav.blog },
+  { key: 'cv', href: `/${locale}/cv/`, label: t.nav.cv },
+  { key: 'contact', href: `/${locale}/contact/`, label: t.nav.contact },
+];
+const isCurrent = (href: string) => (href === `/${locale}/` ? path === href : path.startsWith(href));
+---
+<header class="site-header no-print">
+  <div class="wrap">
+    <div class="nav-bar">
+      <a class="brand" href={withBase(`/${locale}/`)}>
+        <Icon name="cpu" /><span>{profile.nameEn}</span>
+      </a>
+      <nav aria-label={t.nav.label}>
+        <ul class="nav-links">
+          {items.map((i) => <li><a href={withBase(i.href)} aria-current={isCurrent(i.href) ? 'page' : undefined}>{i.label}</a></li>)}
+        </ul>
+      </nav>
+      <div class="nav-tools">
+        <AccentSwitcher locale={locale} class="desktop-only" />
+        <LanguageSwitcher locale={locale} alternates={alternates} fallbackSection={fallbackSection} />
+        <ThemeToggle locale={locale} />
+        <button type="button" class="icon-btn menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu" data-open={t.nav.openMenu} data-close={t.nav.closeMenu} aria-label={t.nav.openMenu}>
+          <Icon name="menu" class="m-open" /><Icon name="x" class="m-close" />
+        </button>
+      </div>
+    </div>
+    <nav id="mobile-menu" class="mobile-menu" aria-label={t.nav.label}>
+      <ul>
+        {items.map((i) => <li><a href={withBase(i.href)} aria-current={isCurrent(i.href) ? 'page' : undefined}>{i.label}</a></li>)}
+      </ul>
+      <AccentSwitcher locale={locale} labels class="mobile-only" />
+    </nav>
+    <span id="accent-status" class="sr-only" role="status"></span>
+  </div>
+</header>
+<style>
+  .m-close { display: none; }
+  #menu-toggle[aria-expanded='true'] .m-open { display: none; }
+  #menu-toggle[aria-expanded='true'] .m-close { display: inline-flex; }
+</style>
+<script>
+  const toggle = document.getElementById('menu-toggle') as HTMLButtonElement | null;
+  const menu = document.getElementById('mobile-menu');
+  const set = (open: boolean) => {
+    if (!toggle || !menu) return;
+    menu.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? toggle.dataset.close! : toggle.dataset.open!);
+  };
+  toggle?.addEventListener('click', () => set(toggle.getAttribute('aria-expanded') !== 'true'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') { set(false); toggle.focus(); }
+  });
+  window.matchMedia('(min-width: 900px)').addEventListener('change', (e) => { if (e.matches) set(false); });
+</script>

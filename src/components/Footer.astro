@@ -1,0 +1,43 @@
+---
+import { withBase } from '../lib/url';
+import { useT } from '../i18n/translations';
+import { localeMeta, locales, pick, type Locale } from '../i18n/locales';
+import { profile } from '../data/profile';
+import { contactLinks } from '../data/social';
+import { site } from '../data/site';
+interface Props { locale: Locale; alternates?: Partial<Record<Locale, string>>; fallbackSection?: string }
+const { locale, alternates = {}, fallbackSection = '' } = Astro.props;
+const t = useT(locale);
+const links = contactLinks();
+const privacy = pick(site.privacyNote, locale);
+const year = new Date().getFullYear();
+---
+<footer class="site-footer no-print">
+  <div class="wrap footer-grid">
+    <div>
+      <strong>{profile.nameEn}{profile.nameZh && ` ${profile.nameZh}`}</strong>
+      <p style="margin:.4rem 0 0">© {year} {profile.nameEn}. {t.footer.rights}</p>
+      {privacy && <p class="muted" style="margin:.4rem 0 0;font-size:.88rem">{privacy}</p>}
+    </div>
+    {links.length > 0 && (
+      <div>
+        <h2>{t.footer.links}</h2>
+        <ul>
+          {links.map((l) => (
+            <li><a href={l.href} {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>{l.label}{l.external && <span class="sr-only"> {t.common.externalNewTab}</span>}</a></li>
+          ))}
+        </ul>
+      </div>
+    )}
+    <div>
+      <h2>{t.footer.language}</h2>
+      <ul>
+        {locales.map((l) => (
+          <li>
+            <a href={withBase(alternates[l] ?? `/${l}/${fallbackSection ? fallbackSection + '/' : ''}`)} lang={localeMeta[l].htmlLang} hreflang={localeMeta[l].hreflang} aria-current={l === locale ? 'true' : undefined}>{localeMeta[l].label}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</footer>

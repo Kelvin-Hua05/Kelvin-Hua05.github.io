@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import { staticPaths, altFor } from '../../../lib/pages';
+import { isLocale } from '../../../i18n/locales';
+import { useT } from '../../../i18n/translations';
+import { getProjects } from '../../../lib/content';
+export const getStaticPaths = staticPaths;
+const locale = Astro.params.locale;
+if (!isLocale(locale)) throw new Error('bad locale');
+const t = useT(locale);
+const projects = await getProjects(locale);
+const categories = [...new Set(projects.map((p) => p.data.category))];
+---
+<BaseLayout locale={locale} title={t.projects.title} description={t.seo.projects} path={`/${locale}/projects/`} alternates={altFor('projects')}>
+  <div class="wrap">
+    <header class="page-head"><h1>{t.projects.title}</h1><p class="lead">{t.projects.lead}</p></header>
+    <section class="section">
+      {projects.length === 0 && <p class="muted">{t.common.empty}</p>}
+      {categories.length > 1 && (
+        <div class="filters" role="group" aria-label={t.projects.filterLabel} id="filters" hidden>
+          <button type="button" class="filter-btn" data-cat="" aria-pressed="true">{t.common.all}</button>
+          {categories.map((c) => <button type="button" class="filter-btn" data-cat={c} aria-pressed="false">{c}</button>)}
+        </div>
+      )}
+      <div class="grid-cards" id="project-grid">{projects.map((p) => <ProjectCard project={p} locale={locale} />)}</div>
+      <p class="muted" id="no-results" hidden>{t.projects.noResults}</p>
+    </section>
+  </div>
+</BaseLayout>
+<script>
+  // Progressive enhancement: filters stay hidden without JavaScript.
+  const bar = document.getElementById('filters');
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('#project-grid [data-category]'));
+  const empty = document.getElementById('no-results');
+  if (bar) {
+    bar.hidden = false;
+    bar.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.filter-btn');
+      if (!btn) return;
+      bar.querySelectorAll('.filter-btn').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      const cat = btn.dataset.cat ?? '';
+      let n = 0;
+      cards.forEach((c) => { const show = !cat || c.dataset.category === cat; c.hidden = !show; if (show) n++; });
+      if (empty) empty.hidden = n > 0;
+    });
+  }
+</script>

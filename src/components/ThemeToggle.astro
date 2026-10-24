@@ -1,0 +1,27 @@
+---
+import Icon from './Icon.astro';
+import { useT } from '../i18n/translations';
+import type { Locale } from '../i18n/locales';
+const { locale } = Astro.props as { locale: Locale };
+const t = useT(locale);
+---
+<button type="button" class="icon-btn" id="theme-toggle" data-to-light={t.nav.themeToLight} data-to-dark={t.nav.themeToDark} aria-label={t.nav.themeToLight}>
+  <Icon name="moon" class="theme-icon-moon" />
+  <Icon name="sun" class="theme-icon-sun" />
+</button>
+<script>
+  import { savePrefs } from '../lib/prefs';
+  const btn = document.getElementById('theme-toggle') as HTMLButtonElement | null;
+  const root = document.documentElement;
+  const sync = () => {
+    if (!btn) return;
+    btn.setAttribute('aria-label', root.dataset.theme === 'light' ? btn.dataset.toDark! : btn.dataset.toLight!);
+  };
+  sync();
+  btn?.addEventListener('click', () => {
+    const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    savePrefs({ theme: next });
+    sync();
+  });
+</script>
